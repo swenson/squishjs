@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+from collections import Counter
+import re
+import sys
+
+if len(sys.argv) < 2:
+  exit("Usage: ./squishjs input.js > output.js")
+
+js = open(sys.argv[1]).read()
+
+# Process the initial comment, usually a copyright notice and license.
+if js.startswith('/*'):
+  initial_comment = js[:js.index('*/') + 2]
+  js = js[len(initial_comment):]
+else:
+  initial_comment = ''
+
+# Count common words
+words = re.findall(r'\b[a-zA-Z]+\b', js)
+count = Counter()
+
+for word in words:
+  count[word] += 1
+
+# Sort them by their total size in the js.
+to_replace = [(v * len(k), k) for k, v in count.items() if v > 1 and len(k) > 2]
+to_replace.sort()
+
+def compress(js, words):
+  """Compress the given javascript by replacing the given list of words with @A, @B, ..., @Z"""
+  js = js.replace('\\', '\\\\')
+  js = js.replace('@', '\1')
+  js = js.replace('~', '\0')
+  js = js.replace("'", '~')
+  for i, word in enumerate(words):
+    js = js.replace(word, '@' + chr(65 + i))
+  new_js = """x='%s'.split('~').join("'").split('\\0').join('~');y=['%s'];for(i in y){x=x.split(String.fromCharCode(64,65+parseInt(i))).join(y[i]);}eval(x.split('\\1').join('@'));""" % ('\\\n'.join(js.split('\n')), "','".join(words))
+  return new_js
+
+# Keep trying to replace words as long as it is profitable.
+best = js
+replace = []
+while to_replace and len(replace) < 26:
+  _, word = to_replace.pop()
+  replace.append(word)
+  compressed = compress(js, replace)
+  if len(compressed) >= best:
+    replace.pop()
+  else:
+    best = compressed
+
+print(initial_comment + best)
