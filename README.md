@@ -12,6 +12,14 @@ After squishing, it is 80,556 bytes.
 (16.63% savings.)
 A copy of the original and squished is in `extern/`.
 
+Speed
+-----
+
+Running performance is the same, but the squished version seems to take about
+twice as long to load. (Tested for jQuery on Chrome 26 on OS X.)
+
+http://jsperf.com/squish-performance
+
 Usage
 -----
 
